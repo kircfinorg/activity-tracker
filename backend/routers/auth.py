@@ -1,10 +1,15 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from typing import Literal, Dict
 from datetime import datetime
 from services.firebase_service import firebase_service
 from middleware.auth import verify_token, get_current_user
 from models.user import User
+from utils.validation import (
+    validate_role,
+    sanitize_string,
+    handle_validation_error
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -41,6 +46,27 @@ class DeleteAccountResponse(BaseModel):
     message: str
 
 
+class GuestLoginRequest(BaseModel):
+    """Request model for guest login"""
+    role: Literal["parent", "child"]
+    display_name: str = "Guest User"
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "role": "parent",
+                "display_name": "Guest Parent"
+            }
+        }
+
+
+class GuestLoginResponse(BaseModel):
+    """Response model for guest login"""
+    success: bool
+    user: User
+    guest_token: str
+
+
 @router.post("/set-role", response_model=SetRoleResponse, status_code=status.HTTP_201_CREATED)
 async def set_user_role(
     request: SetRoleRequest,
@@ -68,6 +94,20 @@ async def set_user_role(
         display_name = token_data.get('name', email.split('@')[0])
         photo_url = token_data.get('picture', '')
         
+        # Validate and sanitize inputs
+        try:
+            validate_role(request.role)
+            # Sanitize user-provided strings
+            sanitized_display_name = sanitize_string(display_name, max_length=100)
+            sanitized_email = sanitize_string(email, max_length=255)
+            sanitized_photo_url = sanitize_string(photo_url, max_length=500)
+        except ValueError as e:
+            logger.warning(f"Validation error: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e)
+            )
+        
         db = firebase_service.get_db()
         user_ref = db.collection('users').document(uid)
         
@@ -82,12 +122,12 @@ async def set_user_role(
                     detail="User already has a role assigned"
                 )
         
-        # Create user profile
+        # Create user profile with sanitized data
         user_data = {
             'uid': uid,
-            'email': email,
-            'displayName': display_name,
-            'photoURL': photo_url,
+            'email': sanitized_email,
+            'displayName': sanitized_display_name,
+            'photoURL': sanitized_photo_url,
             'role': request.role,
             'familyId': None,
             'theme': 'deep-ocean',
@@ -101,9 +141,9 @@ async def set_user_role(
         # Convert to User model for response
         user = User(
             uid=uid,
-            email=email,
-            display_name=display_name,
-            photo_url=photo_url,
+            email=sanitized_email,
+            display_name=sanitized_display_name,
+            photo_url=sanitized_photo_url,
             role=request.role,
             family_id=None,
             theme='deep-ocean',
@@ -114,8 +154,18 @@ async def set_user_role(
         
     except HTTPException:
         raise
+    except ValidationError as e:
+        # Pydantic validation errors
+        raise handle_validation_error(e)
+    except ValueError as e:
+        # Custom validation errors
+        logger.warning(f"Validation error setting role: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     except Exception as e:
-        logger.error(f"Error setting user role: {str(e)}")
+        logger.error(f"Error setting user role: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user profile"
@@ -182,6 +232,98 @@ async def get_user_profile(token_data: Dict = Depends(get_current_user)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve user profile"
+        )
+
+
+@router.post("/guest-login", response_model=GuestLoginResponse, status_code=status.HTTP_201_CREATED)
+async def guest_login(request: GuestLoginRequest):
+    """
+    Create a guest user account for testing without authentication
+    
+    Args:
+        request: GuestLoginRequest containing role and optional display name
+        
+    Returns:
+        GuestLoginResponse with success status, user data, and guest token
+        
+    Raises:
+        HTTPException: 400 if validation fails
+        HTTPException: 500 if database operation fails
+    """
+    try:
+        import uuid
+        
+        # Generate a unique guest ID
+        guest_uid = f"guest_{uuid.uuid4().hex[:12]}"
+        guest_email = f"{guest_uid}@guest.local"
+        
+        # Validate and sanitize inputs
+        try:
+            validate_role(request.role)
+            sanitized_display_name = sanitize_string(request.display_name, max_length=100)
+        except ValueError as e:
+            logger.warning(f"Validation error: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e)
+            )
+        
+        db = firebase_service.get_db()
+        user_ref = db.collection('users').document(guest_uid)
+        
+        # Create guest user profile
+        user_data = {
+            'uid': guest_uid,
+            'email': guest_email,
+            'displayName': sanitized_display_name,
+            'photoURL': '',
+            'role': request.role,
+            'familyId': None,
+            'theme': 'deep-ocean',
+            'createdAt': datetime.utcnow(),
+            'isGuest': True
+        }
+        
+        user_ref.set(user_data)
+        
+        logger.info(f"Guest user created: {guest_uid} with role {request.role}")
+        
+        # Convert to User model for response
+        user = User(
+            uid=guest_uid,
+            email=guest_email,
+            display_name=sanitized_display_name,
+            photo_url='',
+            role=request.role,
+            family_id=None,
+            theme='deep-ocean',
+            created_at=user_data['createdAt']
+        )
+        
+        # Create a simple guest token (just the UID for testing)
+        guest_token = f"guest_token_{guest_uid}"
+        
+        return GuestLoginResponse(
+            success=True,
+            user=user,
+            guest_token=guest_token
+        )
+        
+    except HTTPException:
+        raise
+    except ValidationError as e:
+        raise handle_validation_error(e)
+    except ValueError as e:
+        logger.warning(f"Validation error in guest login: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Error creating guest user: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create guest user"
         )
 
 

@@ -45,6 +45,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshUser = async () => {
+    // Check for guest user first
+    const guestToken = localStorage.getItem('guest_token');
+    const guestUserData = localStorage.getItem('guest_user');
+    
+    if (guestToken && guestUserData) {
+      try {
+        const guestUser = JSON.parse(guestUserData);
+        setUser(guestUser);
+        return;
+      } catch (err) {
+        console.error('Error parsing guest user data:', err);
+      }
+    }
+
     const fbUser = getCurrentUser();
     if (fbUser) {
       await fetchUserProfile(fbUser);
@@ -52,6 +66,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Check for guest user first
+    const guestToken = localStorage.getItem('guest_token');
+    const guestUserData = localStorage.getItem('guest_user');
+    
+    if (guestToken && guestUserData) {
+      try {
+        const guestUser = JSON.parse(guestUserData);
+        setUser(guestUser);
+        setLoading(false);
+        return;
+      } catch (err) {
+        console.error('Error parsing guest user data:', err);
+        localStorage.removeItem('guest_token');
+        localStorage.removeItem('guest_user');
+      }
+    }
+
     const unsubscribe = onAuthChange(async (fbUser) => {
       setFirebaseUser(fbUser);
       

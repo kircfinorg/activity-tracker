@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from dotenv import load_dotenv
 import os
 import logging
@@ -19,6 +20,21 @@ app = FastAPI(
     description="Backend API for the Gamified Activity & Reward Tracker",
     version="1.0.0"
 )
+
+# Register error handlers
+from utils.error_handling import (
+    api_error_handler,
+    http_exception_handler,
+    validation_exception_handler,
+    general_exception_handler,
+    APIError
+)
+from fastapi import HTTPException
+
+app.add_exception_handler(APIError, api_error_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 # Configure CORS
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
@@ -75,8 +91,12 @@ async def health_check():
     }
 
 # Include routers
-from routers import auth
+from routers import auth, families, activities, logs, earnings
 app.include_router(auth.router)
+app.include_router(families.router)
+app.include_router(activities.router)
+app.include_router(logs.router)
+app.include_router(earnings.router)
 
 if __name__ == "__main__":
     import uvicorn

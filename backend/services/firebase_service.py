@@ -3,6 +3,12 @@ from firebase_admin import credentials, firestore, auth
 from config import settings
 import os
 import logging
+from utils.firebase_error_handler import (
+    with_retry,
+    validate_document_data,
+    safe_get_field,
+    RetryConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -82,11 +88,13 @@ class FirebaseService:
         """
         return self.auth
     
+    @with_retry(RetryConfig(max_attempts=3))
     def verify_family_membership(self, user_id: str, family_id: str) -> bool:
         """
         Verify that a user is a member of a specific family
         
         Validates: Requirements 17.4 - Backend Service verifies family membership
+        Validates: Requirements 14.4 - Handle connection errors with retry logic
         
         Args:
             user_id: The user's Firebase UID
@@ -104,7 +112,15 @@ class FirebaseService:
                 return False
             
             user_data = user_doc.to_dict()
-            user_family_id = user_data.get('familyId')
+            
+            # Validate document data (Requirement 14.5)
+            try:
+                validate_document_data(user_data, ['familyId', 'role'])
+            except ValueError as e:
+                logger.error(f"Corrupted user data for {user_id}: {str(e)}")
+                return False
+            
+            user_family_id = safe_get_field(user_data, 'familyId', None)
             
             is_member = user_family_id == family_id
             

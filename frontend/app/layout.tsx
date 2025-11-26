@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import ConnectionStatus from '@/components/ConnectionStatus'
 
 export const metadata: Metadata = {
   title: 'Gamified Activity Tracker',
@@ -16,7 +18,10 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
-          {children}
+          <ThemeProvider>
+            <ConnectionStatus />
+            {children}
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

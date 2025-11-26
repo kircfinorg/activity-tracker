@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isParent() {
+      return getUserData().role == 'parent';
+    }
+    
+    function isSameFamily(familyId) {
+      return getUserData().familyId == familyId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isSameFamily(resource.data.familyId));
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && request.auth.uid == userId;
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Families collection
+    match /families/{familyId} {
+      allow read: if isAuthenticated() && isSameFamily(familyId);
+      allow create: if isAuthenticated() && isParent();
+      allow update: if isAuthenticated() && isParent() && isSameFamily(familyId);
+      allow delete: if isAuthenticated() && isParent() && isSameFamily(familyId);
+    }
+    
+    // Activities collection
+    match /activities/{activityId} {
+      allow read: if isAuthenticated() && isSameFamily(resource.data.familyId);
+      allow create: if isAuthenticated() && isParent() && isSameFamily(request.resource.data.familyId);
+      allow update: if isAuthenticated() && isParent() && isSameFamily(resource.data.familyId);
+      allow delete: if isAuthenticated() && isParent() && isSameFamily(resource.data.familyId);
+    }
+    
+    // Logs collection
+    match /logs/{logId} {
+      allow read: if isAuthenticated() && isSameFamily(resource.data.familyId);
+      allow create: if isAuthenticated() && isSameFamily(request.resource.data.familyId);
+      allow update: if isAuthenticated() && isParent() && isSameFamily(resource.data.familyId);
+      allow delete: if isAuthenticated() && isParent() && isSameFamily(resource.data.familyId);
+    }
+  }
+}

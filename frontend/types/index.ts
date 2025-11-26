@@ -7,11 +7,15 @@ export type Theme = 'hacker-terminal' | 'soft-serenity' | 'deep-ocean';
 export interface User {
   uid: string;
   email: string;
-  displayName: string;
-  photoURL: string;
+  displayName?: string;
+  display_name?: string;
+  photoURL?: string;
+  photo_url?: string;
   role: UserRole;
-  familyId: string | null;
+  familyId?: string | null;
+  family_id?: string | null;
   theme: Theme;
+  created_at?: string;
 }
 
 export interface Family {

@@ -19,18 +19,19 @@ export default function RoleSelectionModal({ isOpen, onRoleSelect }: RoleSelecti
     }
   };
 
+  // Touch-friendly role selection modal (Requirement 13.2)
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome!</h2>
-        <p className="text-gray-600 mb-6">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 sm:p-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Welcome!</h2>
+        <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
           Please select your role to get started with the Activity Tracker.
         </p>
 
-        <div className="space-y-3 mb-6">
+        <div className="space-y-3 mb-4 sm:mb-6">
           <button
             onClick={() => setSelectedRole('parent')}
-            className={`w-full p-4 rounded-lg border-2 transition-all duration-200 text-left min-h-[44px] ${
+            className={`w-full p-4 rounded-lg border-2 transition-all duration-200 text-left min-h-touch ${
               selectedRole === 'parent'
                 ? 'border-blue-600 bg-blue-50'
                 : 'border-gray-300 hover:border-gray-400'
@@ -50,9 +51,9 @@ export default function RoleSelectionModal({ isOpen, onRoleSelect }: RoleSelecti
                   )}
                 </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Parent</h3>
-                <p className="text-sm text-gray-600 mt-1">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Parent</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
                   Create activities, verify completions, and manage your family group.
                 </p>
               </div>
@@ -61,7 +62,7 @@ export default function RoleSelectionModal({ isOpen, onRoleSelect }: RoleSelecti
 
           <button
             onClick={() => setSelectedRole('child')}
-            className={`w-full p-4 rounded-lg border-2 transition-all duration-200 text-left min-h-[44px] ${
+            className={`w-full p-4 rounded-lg border-2 transition-all duration-200 text-left min-h-touch ${
               selectedRole === 'child'
                 ? 'border-blue-600 bg-blue-50'
                 : 'border-gray-300 hover:border-gray-400'
@@ -81,9 +82,9 @@ export default function RoleSelectionModal({ isOpen, onRoleSelect }: RoleSelecti
                   )}
                 </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Child</h3>
-                <p className="text-sm text-gray-600 mt-1">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Child</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
                   Log your activities and track your earnings.
                 </p>
               </div>
@@ -94,7 +95,7 @@ export default function RoleSelectionModal({ isOpen, onRoleSelect }: RoleSelecti
         <button
           onClick={handleSubmit}
           disabled={!selectedRole}
-          className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+          className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-touch text-sm sm:text-base"
         >
           Continue
         </button>
