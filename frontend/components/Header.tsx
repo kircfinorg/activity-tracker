@@ -5,7 +5,7 @@ import { signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { usePendingLogs } from '@/hooks/usePendingLogs';
-import { Bell, Settings } from 'lucide-react';
+import { Bell, Settings, Home } from 'lucide-react';
 import ThemeSelector from './ThemeSelector';
 import Link from 'next/link';
 
@@ -19,15 +19,16 @@ export default function Header() {
     setIsSigningOut(true);
     try {
       await signOut();
-      router.push('/');
+      // Use window.location to ensure clean redirect to login page
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
-    } finally {
       setIsSigningOut(false);
     }
   };
 
-  if (!firebaseUser) {
+  // Show header for both Firebase users and guest users
+  if (!firebaseUser && !user) {
     return null;
   }
 
@@ -47,6 +48,18 @@ export default function Header() {
             <div className="hidden sm:block">
               <ThemeSelector />
             </div>
+
+            {/* Home Button */}
+            {user && (
+              <Link
+                href="/dashboard"
+                className="p-2 text-card-foreground hover:bg-muted rounded-theme transition-colors min-h-touch min-w-touch flex items-center justify-center"
+                title="Home"
+                aria-label="Home"
+              >
+                <Home size={20} />
+              </Link>
+            )}
 
             {/* Settings Link */}
             {user && (
@@ -78,16 +91,16 @@ export default function Header() {
 
             {user && (
               <div className="flex items-center gap-2 sm:gap-3">
-                {firebaseUser.photoURL && (
+                {firebaseUser?.photoURL && (
                   <img
                     src={firebaseUser.photoURL}
-                    alt={user.displayName}
+                    alt={user.display_name || user.displayName || 'User'}
                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full"
                   />
                 )}
                 <div className="hidden md:block">
                   <p className="text-sm font-medium text-card-foreground truncate max-w-[120px]">
-                    {user.displayName}
+                    {user.display_name || user.displayName}
                   </p>
                   <p className="text-xs text-muted-foreground capitalize">
                     {user.role}

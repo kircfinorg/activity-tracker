@@ -69,21 +69,42 @@ export default function Home() {
     setIsSettingRole(true);
     try {
       if (isGuestMode) {
-        // Guest login flow - create local guest user
-        const guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // Guest login flow - use the guest-login endpoint
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/guest-login`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              role,
+              display_name: `Guest ${role === 'parent' ? 'Parent' : 'Child'}`
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ detail: 'Failed to create guest profile' }));
+          throw new Error(error.detail || 'Failed to create guest profile');
+        }
+
+        const data = await response.json();
+        
+        // Store guest token and user data in localStorage
+        localStorage.setItem('guest_token', data.guest_token);
+        
         const guestUser = {
-          uid: guestId,
-          email: `${guestId}@guest.local`,
-          display_name: `Guest ${role === 'parent' ? 'Parent' : 'Child'}`,
-          photo_url: '',
-          role: role,
-          family_id: null,
-          theme: 'deep-ocean',
-          created_at: new Date().toISOString()
+          uid: data.user.uid,
+          email: data.user.email,
+          display_name: data.user.display_name,
+          photo_url: data.user.photo_url || '',
+          role: data.user.role,
+          family_id: data.user.family_id,
+          theme: data.user.theme || 'deep-ocean',
+          created_at: data.user.created_at
         };
         
-        // Store guest data in localStorage
-        localStorage.setItem('guest_token', `guest_token_${guestId}`);
         localStorage.setItem('guest_user', JSON.stringify(guestUser));
         
         setShowRoleModal(false);
@@ -130,32 +151,8 @@ export default function Home() {
     );
   }
 
-  // If user is authenticated but doesn't have a family yet, show appropriate message
-  if (user && !user.familyId) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="flex flex-col items-center justify-center p-4 sm:p-8 pt-20 sm:pt-24">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 sm:p-8 text-center">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
-              Welcome, {user.displayName}!
-            </h2>
-            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
-              {user.role === 'parent' 
-                ? 'Create a family group or join an existing one to get started.'
-                : 'Ask your parent for an invite code to join your family group.'}
-            </p>
-            <button
-              onClick={() => router.push('/onboarding')}
-              className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 min-h-touch text-sm sm:text-base"
-            >
-              Continue
-            </button>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  // This section is handled by the useEffect redirect above
+  // No need for this intermediate state
 
   // Don't show login page if user already has a role (they'll be redirected)
   if (user && user.role) {
@@ -169,11 +166,30 @@ export default function Home() {
     );
   }
 
+  const handleClearData = () => {
+    if (confirm('Clear all saved data? This will remove any guest accounts and families.')) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  };
+
   // Responsive landing page (Requirement 13.1, 13.2, 13.3)
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <main className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-8">
         <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-6 sm:p-8 text-center">
+          {/* Clear Data Button */}
+          {localStorage.getItem('guest_token') && (
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={handleClearData}
+                className="text-xs text-gray-500 hover:text-red-600 underline"
+              >
+                Clear saved data
+              </button>
+            </div>
+          )}
+          
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
             Activity Tracker
           </h1>

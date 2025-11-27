@@ -21,14 +21,14 @@ export default function ActivityCard({
   isLoading = false,
 }: ActivityCardProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-card border border-border rounded-theme p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
       {/* Activity Header */}
       <div className="flex justify-between items-start mb-3 sm:mb-4">
         <div className="flex-1 min-w-0">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+          <h3 className="text-base sm:text-lg font-semibold text-card-foreground truncate">
             {activity.name}
           </h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             ${activity.rate.toFixed(2)} per {activity.unit}
           </p>
         </div>
@@ -38,7 +38,7 @@ export default function ActivityCard({
           <button
             onClick={onDelete}
             disabled={isLoading}
-            className="min-h-touch min-w-touch flex items-center justify-center p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-2 flex-shrink-0"
+            className="min-h-touch min-w-touch flex items-center justify-center p-2 text-error hover:bg-error/10 rounded-theme transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-2 flex-shrink-0"
             aria-label="Delete activity"
             title="Delete activity"
           >
@@ -51,14 +51,14 @@ export default function ActivityCard({
       {userRole === 'child' && earnings && (
         <div className="mb-3 sm:mb-4 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Pending:</span>
-            <span className="font-medium text-yellow-600">
+            <span className="text-muted-foreground">Pending:</span>
+            <span className="font-medium text-warning">
               ${earnings.pending.toFixed(2)}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Verified:</span>
-            <span className="font-medium text-green-600">
+            <span className="text-muted-foreground">Verified:</span>
+            <span className="font-medium text-success">
               ${earnings.verified.toFixed(2)}
             </span>
           </div>
@@ -69,8 +69,8 @@ export default function ActivityCard({
       {userRole === 'parent' && earnings && (
         <div className="mb-3 sm:mb-4">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Total Earnings:</span>
-            <span className="font-medium text-gray-900">
+            <span className="text-muted-foreground">Total Earnings:</span>
+            <span className="font-medium text-card-foreground">
               ${(earnings.pending + earnings.verified).toFixed(2)}
             </span>
           </div>
@@ -82,7 +82,7 @@ export default function ActivityCard({
         <button
           onClick={onIncrement}
           disabled={isLoading}
-          className="w-full min-h-touch flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+          className="w-full min-h-touch flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-theme hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
         >
           <Plus size={20} />
           <span>Log 1 {activity.unit}</span>

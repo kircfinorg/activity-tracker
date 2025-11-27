@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
+from typing import List, Optional
 
 class Activity(BaseModel):
     id: str
@@ -9,6 +10,7 @@ class Activity(BaseModel):
     rate: float = Field(gt=0, description="Rate must be a positive value")
     created_by: str
     created_at: datetime
+    assigned_to: Optional[List[str]] = Field(default=None, description="List of child user IDs this activity is assigned to. None means all children can do it.")
     
     @field_validator('name', 'unit')
     @classmethod
@@ -27,6 +29,7 @@ class Activity(BaseModel):
                 "unit": "Pages",
                 "rate": 0.10,
                 "created_by": "user123",
-                "created_at": "2024-01-01T00:00:00Z"
+                "created_at": "2024-01-01T00:00:00Z",
+                "assigned_to": ["child123", "child456"]
             }
         }

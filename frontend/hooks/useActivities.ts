@@ -62,6 +62,7 @@ export function useActivities(familyId: string | null) {
                 rate: safeGetField(data, 'rate', 0),
                 createdBy: safeGetField(data, 'createdBy', ''),
                 createdAt: data.createdAt?.toDate() || new Date(),
+                assignedTo: data.assignedTo || null,
               });
             } catch (validationError) {
               console.error(`Corrupted activity data for ${doc.id}:`, validationError);

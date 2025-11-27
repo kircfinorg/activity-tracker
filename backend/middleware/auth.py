@@ -107,15 +107,7 @@ async def require_role(required_role: str, token_data: Dict = Security(verify_to
     Raises:
         HTTPException: 403 if user doesn't have required role
     """
-    # For guest users, we'll need to check localStorage on frontend
-    # For now, allow guest users through (they're for testing only)
-    if token_data.get('is_guest'):
-        logger.info(f"Guest user {token_data['uid']} accessing {required_role} endpoint")
-        token_data['role'] = required_role  # Trust the guest for testing
-        token_data['family_id'] = None
-        return token_data
-    
-    # Get user role from Firestore
+    # Get user role from Firestore (works for both guest and Firebase users)
     try:
         user_ref = firebase_service.get_db().collection('users').document(token_data['uid'])
         user_doc = user_ref.get()

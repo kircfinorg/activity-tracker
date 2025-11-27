@@ -11,10 +11,15 @@ import { Activity } from '@/types';
 import { apiClient } from '@/lib/api';
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const router = useRouter();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Refresh user data when component mounts
+  useEffect(() => {
+    refreshUser();
+  }, []);
 
   useEffect(() => {
     const familyId = user?.family_id || user?.familyId;
@@ -69,6 +74,16 @@ export default function DashboardPage() {
                 Welcome, {displayName}!
               </p>
             </div>
+            
+            {/* View Invite Code button for parents */}
+            {user.role === 'parent' && (
+              <button
+                onClick={() => router.push('/family')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 text-sm sm:text-base whitespace-nowrap"
+              >
+                View Invite Code
+              </button>
+            )}
           </div>
 
           {/* Create Activity Form (Parent Only) */}

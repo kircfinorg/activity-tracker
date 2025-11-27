@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import AccountSettings from '@/components/AccountSettings';
 import DeleteAccountDialog from '@/components/DeleteAccountDialog';
 import { signOut } from '@/lib/auth';
-import RoleGuard from '@/components/RoleGuard';
+// RoleGuard not needed - settings page is accessible to all authenticated users
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -15,6 +15,16 @@ export default function SettingsPage() {
 
   const handleDeleteAccount = async () => {
     try {
+      // Check if guest user
+      const guestToken = localStorage.getItem('guest_token');
+      
+      if (guestToken) {
+        // For guest users, just clear localStorage
+        localStorage.clear();
+        window.location.href = '/';
+        return;
+      }
+
       if (!firebaseUser) {
         throw new Error('No authenticated user');
       }
@@ -46,17 +56,15 @@ export default function SettingsPage() {
   };
 
   return (
-    <RoleGuard>
-      <div className="min-h-screen bg-background">
-        <AccountSettings onDeleteAccount={() => setIsDeleteDialogOpen(true)} />
-        
-        <DeleteAccountDialog
-          isOpen={isDeleteDialogOpen}
-          onClose={() => setIsDeleteDialogOpen(false)}
-          onConfirm={handleDeleteAccount}
-          userName={user?.displayName || 'User'}
-        />
-      </div>
-    </RoleGuard>
+    <div className="min-h-screen bg-background">
+      <AccountSettings onDeleteAccount={() => setIsDeleteDialogOpen(true)} />
+      
+      <DeleteAccountDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteAccount}
+        userName={user?.display_name || user?.displayName || 'User'}
+      />
+    </div>
   );
 }

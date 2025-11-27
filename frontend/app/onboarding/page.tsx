@@ -28,22 +28,22 @@ export default function OnboardingPage() {
   const handleCreateSuccess = (familyId: string, code: string) => {
     setError(null);
     setInviteCode(code);
-    setSuccess('Family created successfully!');
+    setSuccess('Family created successfully! Redirecting...');
     
-    // Redirect to dashboard after a short delay
+    // Direct navigation to dashboard
     setTimeout(() => {
-      window.location.href = '/dashboard';
-    }, 3000);
+      router.push('/dashboard');
+    }, 2000);
   };
 
   const handleJoinSuccess = (familyId: string) => {
     setError(null);
-    setSuccess('Successfully joined family!');
+    setSuccess('Successfully joined family! Redirecting...');
     
-    // Redirect to dashboard after a short delay
+    // Direct navigation to dashboard
     setTimeout(() => {
-      window.location.href = '/dashboard';
-    }, 2000);
+      router.push('/dashboard');
+    }, 1500);
   };
 
   const handleError = (errorMessage: string) => {

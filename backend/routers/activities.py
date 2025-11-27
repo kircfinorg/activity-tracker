@@ -23,6 +23,7 @@ class CreateActivityRequest(BaseModel):
     name: str = Field(min_length=1, description="Activity name must not be empty")
     unit: str = Field(min_length=1, description="Unit must not be empty")
     rate: float = Field(gt=0, description="Rate must be a positive value")
+    assigned_to: List[str] | None = Field(default=None, description="List of child user IDs. None means all children.")
     
     class Config:
         json_schema_extra = {
@@ -30,7 +31,8 @@ class CreateActivityRequest(BaseModel):
                 "family_id": "family123",
                 "name": "Reading",
                 "unit": "Pages",
-                "rate": 0.10
+                "rate": 0.10,
+                "assigned_to": ["child123", "child456"]
             }
         }
 
@@ -115,7 +117,8 @@ async def create_activity(
             unit=sanitized_unit,
             rate=validated_rate,
             created_by=uid,
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
+            assigned_to=request.assigned_to
         )
         
         # Convert to dict for Firestore
@@ -126,7 +129,8 @@ async def create_activity(
             'unit': activity.unit,
             'rate': activity.rate,
             'createdBy': activity.created_by,
-            'createdAt': activity.created_at
+            'createdAt': activity.created_at,
+            'assignedTo': activity.assigned_to
         }
         
         activity_ref.set(activity_data)
@@ -210,7 +214,8 @@ async def get_activities(
                 unit=activity_data['unit'],
                 rate=activity_data['rate'],
                 created_by=activity_data['createdBy'],
-                created_at=created_at
+                created_at=created_at,
+                assigned_to=activity_data.get('assignedTo')
             )
             activities.append(activity)
         

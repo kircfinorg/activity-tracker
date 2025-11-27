@@ -28,16 +28,26 @@ export default function FamilyMembersList() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.familyId || !firebaseUser) {
+    const familyId = user?.family_id || user?.familyId;
+    
+    if (!familyId) {
       setLoading(false);
       return;
     }
 
     const fetchFamilyData = async () => {
       try {
-        const token = await firebaseUser.getIdToken();
+        // Get auth token (works for both guest and Firebase users)
+        const { getIdToken } = await import('@/lib/auth');
+        const token = await getIdToken();
+        
+        if (!token) {
+          throw new Error('Not authenticated');
+        }
+
+        // Call backend API to get family details
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/families/${user.familyId}`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/families/${familyId}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -50,8 +60,26 @@ export default function FamilyMembersList() {
         }
 
         const data = await response.json();
-        setFamilyData(data.family);
-        setMembers(data.members);
+        
+        // Transform the response to match our interface
+        setFamilyData({
+          id: data.family.id,
+          name: 'Family', // Backend doesn't store name
+          ownerId: data.family.owner_id,
+          members: data.family.members,
+          inviteCode: data.family.invite_code,
+        });
+        
+        // Transform members data
+        const membersList: FamilyMember[] = data.members.map((member: any) => ({
+          uid: member.uid,
+          displayName: member.display_name || member.displayName || 'User',
+          email: member.email || '',
+          photoURL: member.photo_url || member.photoURL || '',
+          role: member.role,
+        }));
+        
+        setMembers(membersList);
       } catch (err) {
         console.error('Error fetching family data:', err);
         setError('Failed to load family members');
@@ -61,9 +89,11 @@ export default function FamilyMembersList() {
     };
 
     fetchFamilyData();
-  }, [user?.familyId, firebaseUser]);
+  }, [user?.familyId, user?.family_id, firebaseUser]);
 
-  if (!user?.familyId) {
+  const familyId = user?.family_id || user?.familyId;
+  
+  if (!familyId) {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">You are not part of a family yet.</p>

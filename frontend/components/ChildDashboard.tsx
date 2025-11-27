@@ -36,7 +36,17 @@ export default function ChildDashboard({ userId, familyId }: ChildDashboardProps
   );
 
   // Fetch activities with real-time updates (Requirement 14.3, 16.5)
-  const { activities, isLoading: isLoadingActivities, error: activitiesError } = useActivities(familyId);
+  const { activities: allActivities, isLoading: isLoadingActivities, error: activitiesError } = useActivities(familyId);
+  
+  // Filter activities based on assignment
+  const activities = allActivities.filter(activity => {
+    // If assignedTo is null or undefined, activity is available to all children
+    if (!activity.assignedTo || activity.assignedTo.length === 0) {
+      return true;
+    }
+    // Otherwise, check if this child is in the assigned list
+    return activity.assignedTo.includes(userId);
+  });
 
   // Set error message if activities fail to load
   useEffect(() => {

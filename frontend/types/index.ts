@@ -34,6 +34,7 @@ export interface Activity {
   rate: number;
   createdBy: string;
   createdAt: Date;
+  assignedTo?: string[] | null; // List of child user IDs, null/undefined means all children
 }
 
 export interface LogEntry {

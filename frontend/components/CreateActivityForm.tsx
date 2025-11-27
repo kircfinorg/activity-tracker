@@ -1,7 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Activity } from '@/types';
+import { getIdToken } from '@/lib/auth';
+
+interface FamilyMember {
+  uid: string;
+  displayName: string;
+  role: 'parent' | 'child';
+}
 
 interface CreateActivityFormProps {
   familyId: string;
@@ -17,13 +24,53 @@ export default function CreateActivityForm({
   const [name, setName] = useState('');
   const [unit, setUnit] = useState('');
   const [rate, setRate] = useState('');
+  const [children, setChildren] = useState<FamilyMember[]>([]);
+  const [selectedChildren, setSelectedChildren] = useState<string[]>([]);
+  const [assignToAll, setAssignToAll] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingChildren, setIsLoadingChildren] = useState(true);
   const [errors, setErrors] = useState<{
     name?: string;
     unit?: string;
     rate?: string;
+    assignment?: string;
     general?: string;
   }>({});
+
+  // Fetch family children on mount
+  useEffect(() => {
+    const fetchChildren = async () => {
+      try {
+        const token = await getIdToken();
+        if (!token) return;
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/families/${familyId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const childMembers = data.members.filter((m: any) => m.role === 'child');
+          setChildren(childMembers.map((m: any) => ({
+            uid: m.uid,
+            displayName: m.display_name || m.displayName || 'Child',
+            role: m.role
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching children:', error);
+      } finally {
+        setIsLoadingChildren(false);
+      }
+    };
+
+    fetchChildren();
+  }, [familyId]);
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
@@ -46,8 +93,21 @@ export default function CreateActivityForm({
       newErrors.rate = 'Rate must be a positive value';
     }
 
+    // Validate assignment
+    if (!assignToAll && selectedChildren.length === 0 && children.length > 0) {
+      newErrors.assignment = 'Please select at least one child or assign to all';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const toggleChildSelection = (childId: string) => {
+    setSelectedChildren(prev =>
+      prev.includes(childId)
+        ? prev.filter(id => id !== childId)
+        : [...prev, childId]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,17 +121,13 @@ export default function CreateActivityForm({
     setErrors({});
 
     try {
-      // Get Firebase auth token
-      const { getAuth } = await import('firebase/auth');
-      const { auth } = await import('@/lib/firebase');
-      const currentAuth = getAuth();
-      const user = currentAuth.currentUser;
-
-      if (!user) {
+      const token = await getIdToken();
+      if (!token) {
         throw new Error('Not authenticated');
       }
 
-      const token = await user.getIdToken();
+      // Determine assigned_to value
+      const assignedTo = assignToAll ? null : selectedChildren;
 
       // Call API to create activity
       const response = await fetch(
@@ -87,6 +143,7 @@ export default function CreateActivityForm({
             name: name.trim(),
             unit: unit.trim(),
             rate: parseFloat(rate),
+            assigned_to: assignedTo,
           }),
         }
       );
@@ -101,13 +158,16 @@ export default function CreateActivityForm({
       // Convert createdAt string to Date
       const activity: Activity = {
         ...data.activity,
-        createdAt: new Date(data.activity.createdAt),
+        createdAt: new Date(data.activity.created_at),
+        assignedTo: data.activity.assigned_to,
       };
 
       // Reset form
       setName('');
       setUnit('');
       setRate('');
+      setSelectedChildren([]);
+      setAssignToAll(true);
 
       // Notify parent component
       onActivityCreated(activity);
@@ -186,6 +246,63 @@ export default function CreateActivityForm({
           <p className="mt-1 text-xs sm:text-sm text-error animate-slide-in-down">{errors.rate}</p>
         )}
       </div>
+
+      {/* Child Assignment Section */}
+      {!isLoadingChildren && children.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium mb-2 text-card-foreground">
+            Assign To
+          </label>
+          
+          <div className="space-y-2">
+            {/* Assign to All Option */}
+            <label className="flex items-center p-3 border border-border rounded-theme hover:bg-muted cursor-pointer transition-colors">
+              <input
+                type="checkbox"
+                checked={assignToAll}
+                onChange={(e) => {
+                  setAssignToAll(e.target.checked);
+                  if (e.target.checked) {
+                    setSelectedChildren([]);
+                  }
+                }}
+                disabled={isSubmitting}
+                className="w-4 h-4 text-primary border-border rounded focus:ring-2 focus:ring-primary"
+              />
+              <span className="ml-3 text-sm text-card-foreground font-medium">
+                All Children
+              </span>
+            </label>
+
+            {/* Individual Children */}
+            {!assignToAll && (
+              <div className="pl-4 space-y-2 border-l-2 border-border">
+                {children.map((child) => (
+                  <label
+                    key={child.uid}
+                    className="flex items-center p-2 hover:bg-muted rounded-theme cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedChildren.includes(child.uid)}
+                      onChange={() => toggleChildSelection(child.uid)}
+                      disabled={isSubmitting}
+                      className="w-4 h-4 text-primary border-border rounded focus:ring-2 focus:ring-primary"
+                    />
+                    <span className="ml-3 text-sm text-card-foreground">
+                      {child.displayName}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {errors.assignment && (
+            <p className="mt-1 text-xs sm:text-sm text-error animate-slide-in-down">{errors.assignment}</p>
+          )}
+        </div>
+      )}
 
       {errors.general && (
         <div className="p-3 bg-error/10 border border-error/30 rounded-theme animate-slide-in-down">

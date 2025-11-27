@@ -65,8 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    // Check for guest user first
+  const loadGuestUser = () => {
     const guestToken = localStorage.getItem('guest_token');
     const guestUserData = localStorage.getItem('guest_user');
     
@@ -75,12 +74,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const guestUser = JSON.parse(guestUserData);
         setUser(guestUser);
         setLoading(false);
-        return;
+        return true;
       } catch (err) {
         console.error('Error parsing guest user data:', err);
         localStorage.removeItem('guest_token');
         localStorage.removeItem('guest_user');
       }
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    // Check for guest user first
+    if (loadGuestUser()) {
+      return;
     }
 
     const unsubscribe = onAuthChange(async (fbUser) => {
@@ -89,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (fbUser) {
         await fetchUserProfile(fbUser);
       } else {
+        // No Firebase user and no guest user - clear everything
         setUser(null);
         setError(null);
       }
@@ -96,7 +104,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Set loading to false after a short delay if still loading
+    // This handles the case where onAuthChange doesn't fire immediately
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+      }
+    }, 1000);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  // Listen for storage changes (for guest users)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'guest_user' && e.newValue) {
+        try {
+          const guestUser = JSON.parse(e.newValue);
+          setUser(guestUser);
+        } catch (err) {
+          console.error('Error parsing guest user data from storage event:', err);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   return (

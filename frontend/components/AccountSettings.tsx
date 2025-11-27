@@ -11,9 +11,14 @@ interface AccountSettingsProps {
 export default function AccountSettings({ onDeleteAccount }: AccountSettingsProps) {
   const { user, firebaseUser } = useAuth();
 
-  if (!user || !firebaseUser) {
+  if (!user) {
     return null;
   }
+
+  const displayName = user.display_name || user.displayName || 'Guest User';
+  const email = user.email || firebaseUser?.email || 'guest@local';
+  const photoURL = firebaseUser?.photoURL || user.photo_url;
+  const familyId = user.family_id || user.familyId;
 
   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-6">
@@ -22,10 +27,10 @@ export default function AccountSettings({ onDeleteAccount }: AccountSettingsProp
       {/* User Profile Information */}
       <div className="bg-card border border-border rounded-theme p-6 mb-6 shadow-sm">
         <div className="flex items-center gap-4 mb-4">
-          {firebaseUser.photoURL ? (
+          {photoURL ? (
             <img
-              src={firebaseUser.photoURL}
-              alt={user.displayName}
+              src={photoURL}
+              alt={displayName}
               className="w-16 h-16 rounded-full"
             />
           ) : (
@@ -34,18 +39,18 @@ export default function AccountSettings({ onDeleteAccount }: AccountSettingsProp
             </div>
           )}
           <div>
-            <h3 className="text-lg font-semibold text-card-foreground">{user.displayName}</h3>
-            <p className="text-sm text-muted-foreground">{firebaseUser.email}</p>
+            <h3 className="text-lg font-semibold text-card-foreground">{displayName}</h3>
+            <p className="text-sm text-muted-foreground">{email}</p>
             <p className="text-sm text-muted-foreground capitalize mt-1">
               Role: <span className="font-medium">{user.role}</span>
             </p>
           </div>
         </div>
 
-        {user.familyId && (
+        {familyId && (
           <div className="mt-4 pt-4 border-t border-border">
             <p className="text-sm text-muted-foreground">
-              Family ID: <span className="font-mono text-card-foreground">{user.familyId}</span>
+              Family ID: <span className="font-mono text-card-foreground">{familyId}</span>
             </p>
           </div>
         )}

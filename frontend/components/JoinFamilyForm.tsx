@@ -24,52 +24,45 @@ export default function JoinFamilyForm({ onSuccess, onError }: JoinFamilyFormPro
     try {
       const code = inviteCode.trim().toUpperCase();
 
-      // For guest mode, check localStorage
+      // Get auth token (works for both guest and Firebase users)
+      const { getIdToken } = await import('@/lib/auth');
+      const token = await getIdToken();
+      
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      // Call backend API to join family
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/families/join`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            invite_code: code
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: 'Failed to join family' }));
+        throw new Error(error.detail || 'Failed to join family');
+      }
+
+      const data = await response.json();
+      
+      // Update guest user with family ID if in guest mode
       const guestUser = localStorage.getItem('guest_user');
       if (guestUser) {
         const user = JSON.parse(guestUser);
-
-        // Check if user is already in a family
-        if (user.family_id) {
-          onError('You are already a member of a family');
-          setIsJoining(false);
-          return;
-        }
-
-        // Look up family by invite code
-        const inviteCodes = JSON.parse(localStorage.getItem('invite_codes') || '{}');
-        const familyId = inviteCodes[code];
-
-        if (!familyId) {
-          onError('Invalid invite code');
-          setIsJoining(false);
-          return;
-        }
-
-        // Get family data
-        const familyData = localStorage.getItem(`family_${familyId}`);
-        if (!familyData) {
-          onError('Family not found');
-          setIsJoining(false);
-          return;
-        }
-
-        const family = JSON.parse(familyData);
-
-        // Add user to family members
-        if (!family.members.includes(user.uid)) {
-          family.members.push(user.uid);
-          localStorage.setItem(`family_${familyId}`, JSON.stringify(family));
-        }
-
-        // Update user with family ID
-        user.family_id = familyId;
+        user.family_id = data.family_id;
         localStorage.setItem('guest_user', JSON.stringify(user));
-
-        onSuccess(familyId);
-      } else {
-        onError('User not found. Please sign in again.');
       }
+
+      onSuccess(data.family_id);
     } catch (err: any) {
       console.error('Error joining family:', err);
       onError(err.message || 'Failed to join family');
@@ -90,7 +83,7 @@ export default function JoinFamilyForm({ onSuccess, onError }: JoinFamilyFormPro
           value={inviteCode}
           onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
           placeholder="Enter 6-character code"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base uppercase tracking-wider"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base uppercase tracking-wider text-gray-900 placeholder:text-gray-400"
           disabled={isJoining}
           maxLength={6}
         />
