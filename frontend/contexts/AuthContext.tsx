@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to get authentication token');
       }
 
-      const response = await authApi.getProfile(token);
+      const response = await authApi.getProfile(token) as any;
       setUser(response.user);
       setError(null);
     } catch (err: any) {
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for guest user first
     const guestToken = localStorage.getItem('guest_token');
     const guestUserData = localStorage.getItem('guest_user');
-    
+
     if (guestToken && guestUserData) {
       try {
         const guestUser = JSON.parse(guestUserData);
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadGuestUser = () => {
     const guestToken = localStorage.getItem('guest_token');
     const guestUserData = localStorage.getItem('guest_user');
-    
+
     if (guestToken && guestUserData) {
       try {
         const guestUser = JSON.parse(guestUserData);
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthChange(async (fbUser) => {
       setFirebaseUser(fbUser);
-      
+
       if (fbUser) {
         await fetchUserProfile(fbUser);
       } else {
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setError(null);
       }
-      
+
       setLoading(false);
     });
 

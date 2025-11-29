@@ -7,6 +7,9 @@ import { useFamilyChildren } from '@/hooks/useFamily';
 import { Users, AlertCircle, CheckCircle, ChevronRight } from 'lucide-react';
 import VerificationQueue from './VerificationQueue';
 import ChildActivityHistory from './ChildActivityHistory';
+import ActivityGrid from './ActivityGrid';
+import { useActivities } from '@/hooks/useActivities';
+import { getIdToken } from '@/lib/auth';
 
 interface ParentDashboardProps {
   familyId: string;
@@ -26,6 +29,33 @@ export default function ParentDashboard({ familyId }: ParentDashboardProps) {
 
   // Fetch family children with real-time updates (Requirement 14.3, 16.5)
   const { children: familyMembers, isLoading, error } = useFamilyChildren(familyId);
+  const { activities, isLoading: isLoadingActivities } = useActivities(familyId);
+
+  const handleDeleteActivity = async (activityId: string) => {
+    if (!confirm('Are you sure you want to delete this activity?')) return;
+
+    try {
+      const token = await getIdToken();
+      if (!token) return;
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/activities/${activityId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to delete activity');
+      }
+    } catch (error) {
+      console.error('Error deleting activity:', error);
+      alert('Failed to delete activity');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -105,7 +135,7 @@ export default function ParentDashboard({ familyId }: ParentDashboardProps) {
               Verification Dashboard
             </h2>
             <p className="text-sm sm:text-base text-gray-600">
-              Review and approve your children's activities
+              Review and approve your children&apos;s activities
             </p>
           </div>
           <div className="text-center sm:text-right flex-shrink-0">
@@ -183,6 +213,19 @@ export default function ParentDashboard({ familyId }: ParentDashboardProps) {
           </p>
         </div>
       )}
+
+      {/* Manage Activities */}
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
+          Manage Activities
+        </h3>
+        <ActivityGrid
+          activities={activities}
+          userRole="parent"
+          onDelete={handleDeleteActivity}
+          isLoading={isLoadingActivities}
+        />
+      </div>
     </div>
   );
 }

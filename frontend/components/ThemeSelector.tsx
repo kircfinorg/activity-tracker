@@ -36,11 +36,11 @@ export default function ThemeSelector() {
           />
 
           {/* Dropdown menu */}
-          <div className="absolute right-0 mt-2 w-64 sm:w-56 bg-card border border-border rounded-theme shadow-lg z-50 overflow-hidden">
-            <div className="p-2">
-              <div className="text-xs sm:text-sm font-semibold text-muted-foreground px-3 py-2">
-                Select Theme
-              </div>
+          <div className="absolute right-0 mt-2 w-64 sm:w-56 bg-card border border-border rounded-theme shadow-lg z-50 overflow-hidden max-h-[80vh] flex flex-col">
+            <div className="text-xs sm:text-sm font-semibold text-muted-foreground px-5 py-3 border-b border-border bg-card sticky top-0 z-10">
+              Select Theme
+            </div>
+            <div className="overflow-y-auto p-2">
               {(Object.keys(themes) as Theme[]).map((themeKey) => {
                 const themeConfig = themes[themeKey];
                 const isSelected = theme === themeKey;

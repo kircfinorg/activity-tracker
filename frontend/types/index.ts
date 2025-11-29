@@ -2,7 +2,22 @@ export type UserRole = 'parent' | 'child';
 
 export type VerificationStatus = 'pending' | 'approved' | 'rejected';
 
-export type Theme = 'hacker-terminal' | 'soft-serenity' | 'deep-ocean';
+export type Theme = 
+  | 'hacker-terminal' 
+  | 'soft-serenity' 
+  | 'deep-ocean'
+  | 'sunset-glow'
+  | 'forest-mist'
+  | 'midnight-purple'
+  | 'golden-hour'
+  | 'arctic-frost'
+  | 'cherry-blossom'
+  | 'cyberpunk-neon'
+  | 'desert-sand'
+  | 'ocean-breeze'
+  | 'volcano-fire'
+  | 'mint-fresh'
+  | 'royal-velvet';
 
 export interface User {
   uid: string;

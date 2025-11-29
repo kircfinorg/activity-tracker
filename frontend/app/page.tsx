@@ -36,13 +36,13 @@ export default function Home() {
       setError(null);
       // Refresh user profile to check if they have a role
       await refreshUser();
-      
+
       // Check if user needs to set role
       const token = await getIdToken();
       if (token) {
         try {
-          const response = await authApi.getProfile(token);
-          if (!response.user.role) {
+          const response = await authApi.getProfile(token) as any;
+          if (!response.user?.role) {
             setShowRoleModal(true);
           }
         } catch (err: any) {
@@ -90,10 +90,10 @@ export default function Home() {
         }
 
         const data = await response.json();
-        
+
         // Store guest token and user data in localStorage
         localStorage.setItem('guest_token', data.guest_token);
-        
+
         const guestUser = {
           uid: data.user.uid,
           email: data.user.email,
@@ -104,12 +104,12 @@ export default function Home() {
           theme: data.user.theme || 'deep-ocean',
           created_at: data.user.created_at
         };
-        
+
         localStorage.setItem('guest_user', JSON.stringify(guestUser));
-        
+
         setShowRoleModal(false);
         setError(null);
-        
+
         // Force page reload to pick up guest user
         window.location.href = '/onboarding';
       } else {
@@ -123,7 +123,7 @@ export default function Home() {
         await refreshUser();
         setShowRoleModal(false);
         setError(null);
-        
+
         // Redirect based on role - parents need to create/join family, children need to join
         router.push('/onboarding');
       }
@@ -189,7 +189,7 @@ export default function Home() {
               </button>
             </div>
           )}
-          
+
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
             Activity Tracker
           </h1>

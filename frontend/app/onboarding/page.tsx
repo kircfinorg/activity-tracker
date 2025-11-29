@@ -8,7 +8,7 @@ import CreateFamilyForm from '@/components/CreateFamilyForm';
 import JoinFamilyForm from '@/components/JoinFamilyForm';
 
 export default function OnboardingPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   const [error, setError] = useState<string | null>(null);
@@ -25,21 +25,25 @@ export default function OnboardingPage() {
     }
   }, [user, loading, router]);
 
-  const handleCreateSuccess = (familyId: string, code: string) => {
+  const handleCreateSuccess = async (familyId: string, code: string) => {
     setError(null);
     setInviteCode(code);
     setSuccess('Family created successfully! Redirecting...');
-    
+
+    await refreshUser();
+
     // Direct navigation to dashboard
     setTimeout(() => {
       router.push('/dashboard');
     }, 2000);
   };
 
-  const handleJoinSuccess = (familyId: string) => {
+  const handleJoinSuccess = async (familyId: string) => {
     setError(null);
     setSuccess('Successfully joined family! Redirecting...');
-    
+
+    await refreshUser();
+
     // Direct navigation to dashboard
     setTimeout(() => {
       router.push('/dashboard');
@@ -104,21 +108,19 @@ export default function OnboardingPage() {
               <div className="flex border-b border-gray-200">
                 <button
                   onClick={() => setActiveTab('create')}
-                  className={`flex-1 py-3 px-4 text-sm sm:text-base font-medium transition-colors ${
-                    activeTab === 'create'
-                      ? 'border-b-2 border-blue-600 text-blue-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`flex-1 py-3 px-4 text-sm sm:text-base font-medium transition-colors ${activeTab === 'create'
+                    ? 'border-b-2 border-blue-600 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
                 >
                   Create Family
                 </button>
                 <button
                   onClick={() => setActiveTab('join')}
-                  className={`flex-1 py-3 px-4 text-sm sm:text-base font-medium transition-colors ${
-                    activeTab === 'join'
-                      ? 'border-b-2 border-blue-600 text-blue-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`flex-1 py-3 px-4 text-sm sm:text-base font-medium transition-colors ${activeTab === 'join'
+                    ? 'border-b-2 border-blue-600 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
                 >
                   Join Family
                 </button>

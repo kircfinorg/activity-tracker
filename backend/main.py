@@ -91,12 +91,13 @@ async def health_check():
     }
 
 # Include routers
-from routers import auth, families, activities, logs, earnings
+from routers import auth, families, activities, logs, earnings, badges
 app.include_router(auth.router)
 app.include_router(families.router)
 app.include_router(activities.router)
 app.include_router(logs.router)
 app.include_router(earnings.router)
+app.include_router(badges.router)
 
 if __name__ == "__main__":
     import uvicorn

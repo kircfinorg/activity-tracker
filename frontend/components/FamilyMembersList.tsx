@@ -29,7 +29,7 @@ export default function FamilyMembersList() {
 
   useEffect(() => {
     const familyId = user?.family_id || user?.familyId;
-    
+
     if (!familyId) {
       setLoading(false);
       return;
@@ -40,7 +40,7 @@ export default function FamilyMembersList() {
         // Get auth token (works for both guest and Firebase users)
         const { getIdToken } = await import('@/lib/auth');
         const token = await getIdToken();
-        
+
         if (!token) {
           throw new Error('Not authenticated');
         }
@@ -60,7 +60,7 @@ export default function FamilyMembersList() {
         }
 
         const data = await response.json();
-        
+
         // Transform the response to match our interface
         setFamilyData({
           id: data.family.id,
@@ -69,7 +69,7 @@ export default function FamilyMembersList() {
           members: data.family.members,
           inviteCode: data.family.invite_code,
         });
-        
+
         // Transform members data
         const membersList: FamilyMember[] = data.members.map((member: any) => ({
           uid: member.uid,
@@ -78,7 +78,7 @@ export default function FamilyMembersList() {
           photoURL: member.photo_url || member.photoURL || '',
           role: member.role,
         }));
-        
+
         setMembers(membersList);
       } catch (err) {
         console.error('Error fetching family data:', err);
@@ -92,7 +92,7 @@ export default function FamilyMembersList() {
   }, [user?.familyId, user?.family_id, firebaseUser]);
 
   const familyId = user?.family_id || user?.familyId;
-  
+
   if (!familyId) {
     return (
       <div className="text-center py-8">
@@ -165,7 +165,7 @@ export default function FamilyMembersList() {
                       )}
                     </p>
                     {isOwner && (
-                      <Crown size={16} className="text-warning flex-shrink-0" title="Family Owner" />
+                      <Crown size={16} className="text-warning flex-shrink-0" />
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground truncate">{member.email}</p>
@@ -173,11 +173,10 @@ export default function FamilyMembersList() {
 
                 <div className="flex-shrink-0">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      member.role === 'parent'
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${member.role === 'parent'
                         ? 'bg-primary/10 text-primary'
                         : 'bg-secondary/10 text-secondary'
-                    }`}
+                      }`}
                   >
                     {member.role === 'parent' ? 'Parent' : 'Child'}
                   </span>

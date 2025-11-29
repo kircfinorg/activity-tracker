@@ -5,7 +5,7 @@ import { signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { usePendingLogs } from '@/hooks/usePendingLogs';
-import { Bell, Settings, Home } from 'lucide-react';
+import { Bell, Settings, Home, ArrowLeft, RefreshCw, Trophy } from 'lucide-react';
 import ThemeSelector from './ThemeSelector';
 import Link from 'next/link';
 
@@ -37,8 +37,28 @@ export default function Header() {
     <header className="bg-card shadow-sm border-b border-border">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16">
-          <div className="flex items-center min-w-0 flex-1">
-            <h1 className="text-base sm:text-xl font-bold text-card-foreground truncate">
+          <div className="flex items-center min-w-0 flex-1 gap-1 sm:gap-2">
+            {/* Back Button */}
+            <button
+              onClick={() => router.back()}
+              className="p-2 text-card-foreground hover:bg-muted rounded-theme transition-colors min-h-touch min-w-touch flex items-center justify-center"
+              title="Go Back"
+              aria-label="Go Back"
+            >
+              <ArrowLeft size={20} />
+            </button>
+
+            {/* Refresh Button */}
+            <button
+              onClick={() => window.location.reload()}
+              className="p-2 text-card-foreground hover:bg-muted rounded-theme transition-colors min-h-touch min-w-touch flex items-center justify-center"
+              title="Refresh Page"
+              aria-label="Refresh Page"
+            >
+              <RefreshCw size={20} />
+            </button>
+
+            <h1 className="text-base sm:text-xl font-bold text-card-foreground truncate ml-1 sm:ml-2">
               Activity Tracker
             </h1>
           </div>
@@ -58,6 +78,18 @@ export default function Header() {
                 aria-label="Home"
               >
                 <Home size={20} />
+              </Link>
+            )}
+
+            {/* Badges Button */}
+            {user && (
+              <Link
+                href="/badges"
+                className="p-2 text-card-foreground hover:bg-muted rounded-theme transition-colors min-h-touch min-w-touch flex items-center justify-center"
+                title="Badges"
+                aria-label="Badges"
+              >
+                <Trophy size={20} />
               </Link>
             )}
 

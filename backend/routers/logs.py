@@ -158,6 +158,27 @@ async def create_log(
         
         logger.info(f"Log entry {log_id} created by user {uid} for activity {activity_id}")
         
+        # 🎮 GAMIFICATION: Award XP, update streak, check badges
+        try:
+            from services.gamification_service import gamification_service
+            
+            # Award base XP for logging activity
+            await gamification_service.award_xp(uid, 5, "activity_logged")
+            
+            # Update streak
+            await gamification_service.update_streak(uid)
+            
+            # Increment activity count
+            await gamification_service.increment_activity_count(uid)
+            
+            # Check for new badges
+            await gamification_service.check_and_award_badges(uid)
+            
+            logger.info(f"Gamification updated for user {uid}")
+        except Exception as e:
+            # Don't fail the request if gamification fails
+            logger.error(f"Error updating gamification: {str(e)}")
+        
         return CreateLogResponse(log=log_entry)
         
     except HTTPException:
@@ -354,6 +375,34 @@ async def verify_log(
         )
         
         logger.info(f"Log entry {log_id} verified as {request.status} by user {uid}")
+        
+        # 🎮 GAMIFICATION: Award XP for approved earnings
+        if request.status == "approved":
+            try:
+                from services.gamification_service import gamification_service
+                
+                # Get activity to calculate earnings
+                activity_ref = db.collection('activities').document(log_entry.activity_id)
+                activity_doc = activity_ref.get()
+                
+                if activity_doc.exists:
+                    activity_data = activity_doc.to_dict()
+                    rate = activity_data.get('rate', 0)
+                    earnings = rate * log_entry.units
+                    
+                    # Award XP based on earnings ($1 = 10 XP)
+                    xp_amount = gamification_service.calculate_xp_for_earnings(earnings)
+                    await gamification_service.award_xp(log_entry.user_id, xp_amount, "earnings")
+                    
+                    # Add to total earnings
+                    await gamification_service.add_to_total_earnings(log_entry.user_id, earnings)
+                    
+                    # Check for new badges
+                    await gamification_service.check_and_award_badges(log_entry.user_id)
+                    
+                    logger.info(f"Awarded {xp_amount} XP to user {log_entry.user_id} for ${earnings:.2f} earnings")
+            except Exception as e:
+                logger.error(f"Error updating gamification on approval: {str(e)}")
         
         return VerifyLogResponse(log=log_entry)
         
